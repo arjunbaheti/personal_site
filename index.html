@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arjun Baheti</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=VT323&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #06060f;
+      --fg: #dce8ff;
+      --cyan: #00ccff;
+      --pink: #ff2070;
+      --lime: #aaff00;
+      --muted: rgba(220,232,255,0.62);
+      --border: rgba(0,204,255,0.14);
+      --surface: rgba(0,204,255,0.03);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      cursor: none;
+      overflow-x: hidden;
+    }
+    a, button { cursor: none; }
+
+    /* grid background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,204,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,204,255,0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* scanlines */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 998;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px,
+        transparent 1px, transparent 3px
+      );
+      pointer-events: none;
+    }
+
+    /* ── Scroll progress ── */
+    #scroll-progress {
+      position: fixed; top: 0; left: 0; z-index: 9997;
+      height: 2px; width: 0%;
+      background: linear-gradient(90deg, var(--cyan) 0%, var(--pink) 100%);
+      pointer-events: none;
+    }
+
+    /* ── Cursor ── */
+    #cur-dot {
+      position: fixed; top: 0; left: 0;
+      width: 7px; height: 7px;
+      background: var(--cyan);
+      border-radius: 50%;
+      pointer-events: none; z-index: 9999;
+      transform: translate(-50%,-50%);
+      box-shadow: 0 0 10px var(--cyan);
+      transition: width .15s, height .15s, opacity .15s;
+    }
+    #cur-ring {
+      position: fixed; top: 0; left: 0;
+      width: 36px; height: 36px;
+      border: 1px solid rgba(0,204,255,0.6);
+      border-radius: 50%;
+      pointer-events: none; z-index: 9998;
+      transform: translate(-50%,-50%);
+      transition: width .4s cubic-bezier(.25,.46,.45,.94),
+                  height .4s cubic-bezier(.25,.46,.45,.94),
+                  border-color .25s, background .25s;
+    }
+    body.c-hover #cur-dot { width: 3px; height: 3px; opacity: .5; }
+    body.c-hover #cur-ring { width: 54px; height: 54px; border-color: var(--pink); background: rgba(255,32,112,.04); }
+    body.c-click #cur-dot { width: 12px; height: 12px; }
+    body.c-click #cur-ring { width: 26px; height: 26px; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 26px 52px;
+      transition: padding .45s cubic-bezier(.25,.46,.45,.94), background .4s, border-color .4s;
+      border-bottom: 1px solid transparent;
+    }
+    nav.compact {
+      padding: 14px 52px;
+      background: rgba(6,6,15,.92);
+      backdrop-filter: blur(22px);
+      border-color: var(--border);
+    }
+    .nav-logo {
+      font-family: 'VT323', monospace;
+      font-size: 22px; letter-spacing: 1px;
+      color: var(--cyan); text-decoration: none;
+      display: flex; align-items: center; gap: 10px;
+      text-shadow: 0 0 14px rgba(0,204,255,.5);
+    }
+    .blink { animation: blink 1.2s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a {
+      font-family: 'VT323', monospace; font-size: 17px;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--muted); text-decoration: none;
+      transition: color .2s, text-shadow .2s;
+    }
+    .nav-links a:hover {
+      color: var(--cyan);
+      text-shadow: 0 0 12px rgba(0,204,255,.6);
+    }
+
+    /* ── Floating orbs ── */
+    .orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(100px); pointer-events: none; z-index: 0;
+    }
+    .orb-1 {
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(0,204,255,.09) 0%, transparent 65%);
+      top: -220px; right: -200px;
+      animation: drift-a 30s ease-in-out infinite alternate;
+    }
+    .orb-2 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(255,32,112,.07) 0%, transparent 65%);
+      bottom: 5%; left: -200px;
+      animation: drift-b 36s ease-in-out infinite alternate;
+    }
+    @keyframes drift-a {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(50px,60px) scale(1.1); }
+    }
+    @keyframes drift-b {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(-40px,-50px) scale(1.08); }
+    }
+
+    /* ── Geometric shapes ── */
+    .geo {
+      position: absolute; pointer-events: none; z-index: 0;
+      will-change: transform;
+    }
+    .geo-ring-1 {
+      width: 560px; height: 560px;
+      border-radius: 50%;
+      border: 1px dashed rgba(0,204,255,0.11);
+      top: calc(50% - 280px); right: -110px;
+    }
+    .geo-ring-2 {
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      border: 1px dashed rgba(255,32,112,0.08);
+      top: calc(50% - 160px); right: 60px;
+    }
+    .geo-sq {
+      width: 150px; height: 150px;
+      border: 1px solid rgba(0,204,255,0.09);
+      right: 260px; bottom: 130px;
+    }
+
+    /* ── Hero ── */
+    #hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      justify-content: flex-end; padding: 0 52px 72px;
+      position: relative; z-index: 1; overflow: hidden;
+    }
+    .hero-eyebrow {
+      font-family: 'VT323', monospace; font-size: 18px;
+      color: var(--muted); letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 18px;
+      opacity: 0; animation: fade-up .7s .1s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    .hero-eyebrow span { color: var(--cyan); }
+
+    /* Glitch name */
+    .glitch-wrap {
+      opacity: 0; animation: fade-up .8s .25s cubic-bezier(.16,1,.3,1) forwards;
+      margin-bottom: 56px;
+    }
+    .glitch-name {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(68px, 11.5vw, 152px);
+      line-height: .9; letter-spacing: -4px;
+      color: var(--fg); position: relative; display: inline-block;
+    }
+    .glitch-name::before,
+    .glitch-name::after {
+      content: attr(data-text);
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0;
+    }
+    .glitch-name::before { color: var(--cyan); }
+    .glitch-name::after  { color: var(--pink); }
+    .glitch-name.glitching::before {
+      opacity: .85;
+      animation: glitch-b .35s steps(2) forwards;
+    }
+    .glitch-name.glitching::after {
+      opacity: .85;
+      animation: glitch-a .35s steps(2) forwards;
+    }
+    @keyframes glitch-a {
+      0%  { clip-path: inset(15% 0 78% 0); transform: translateX(-5px); }
+      50% { clip-path: inset(65% 0 18% 0); transform: translateX(5px);  }
+      100%{ clip-path: inset(15% 0 78% 0); transform: translateX(0); opacity:0; }
+    }
+    @keyframes glitch-b {
+      0%  { clip-path: inset(55% 0 30% 0); transform: translateX(5px);  }
+      50% { clip-path: inset(20% 0 65% 0); transform: translateX(-5px); }
+      100%{ clip-path: inset(55% 0 30% 0); transform: translateX(0); opacity:0; }
+    }
+    .hero-bottom-row {
+      display: flex; align-items: center; justify-content: space-between; gap: 32px;
+      opacity: 0; animation: fade-up .8s .5s cubic-bezier(.16,1,.3,1) forwards;
+    }
+    .hero-ctas { display: flex; gap: 12px; flex-shrink: 0; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 26px;
+      font-family: 'VT323', monospace; font-size: 18px;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      text-decoration: none; border: none;
+      position: relative;
+    }
+    .btn-cyan { background: var(--cyan); color: #06060f; }
+    .btn-cyan:hover { box-shadow: 0 8px 32px rgba(0,204,255,.35); }
+    .btn-outline {
+      background: transparent; color: var(--fg);
+      border: 1px solid rgba(220,232,255,.15);
+    }
+    .btn-outline:hover {
+      border-color: rgba(0,204,255,.4); color: var(--cyan);
+      box-shadow: 0 0 20px rgba(0,204,255,.1);
+    }
+    .scroll-sig {
+      display: flex; align-items: center; gap: 12px;
+      font-family: 'VT323', monospace; font-size: 15px;
+      color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase;
+    }
+    .scroll-line {
+      width: 44px; height: 1px; background: var(--border);
+      position: relative; overflow: hidden;
+    }
+    .scroll-line::after {
+      content: ''; position: absolute; top: 0; left: -100%;
+      width: 100%; height: 100%; background: var(--cyan);
+      animation: sweep 2s ease-in-out infinite;
+    }
+    @keyframes sweep { 0%{left:-100%} 50%{left:0} 100%{left:100%} }
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(26px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Marquee ── */
+    .marquee-strip {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 0; overflow: hidden;
+      position: relative; z-index: 1;
+      background: rgba(0,204,255,.015);
+    }
+    .marquee-track {
+      display: flex; animation: marquee 30s linear infinite; flex-shrink: 0;
+    }
+    .marquee-strip:hover .marquee-track { animation-play-state: paused; }
+    @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+    .m-item {
+      display: flex; align-items: center; gap: 20px; flex-shrink: 0;
+      padding: 0 20px; white-space: nowrap;
+      font-family: 'VT323', monospace; font-size: 16px;
+      letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted);
+    }
+    .m-sep { color: var(--cyan); }
+
+    /* ── Sections ── */
+    .page-section { padding: 110px 52px; position: relative; z-index: 1; }
+    .page-section + .page-section { border-top: 1px solid var(--border); }
+    .sec-label {
+      font-family: 'VT323', monospace; font-size: 15px;
+      color: var(--cyan); letter-spacing: 2.5px; text-transform: uppercase;
+      margin-bottom: 56px; display: flex; align-items: center; gap: 14px;
+      text-shadow: 0 0 10px rgba(0,204,255,.4);
+    }
+    .sec-label::before { content: '['; }
+    .sec-label::after  { content: ']'; }
+    .sec-label .line { flex-grow: 1; max-width: 48px; height: 1px; background: var(--border); }
+    .sec-h {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(36px, 5.5vw, 64px);
+      letter-spacing: -2px; line-height: 1.02;
+    }
+    .sec-h .hi { color: var(--cyan); }
+
+    /* ── About ── */
+    .about-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 72px; align-items: start; }
+    .about-r p { font-size: 16px; font-weight: 400; color: var(--muted); line-height: 1.8; margin-bottom: 20px; }
+    .about-r p:last-child { margin-bottom: 0; }
+    .about-r p strong { color: var(--fg); font-weight: 500; }
+    .fact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--border); margin-top: 36px; }
+    .fact-cell {
+      padding: 16px 18px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      transition: background .2s;
+    }
+    .fact-cell:nth-child(even) { border-right: none; }
+    .fact-cell:nth-last-child(-n+2) { border-bottom: none; }
+    .fact-cell:hover { background: var(--surface); }
+    .fc-label { font-family: 'VT323', monospace; font-size: 12px; color: var(--cyan); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+    .fc-val { font-size: 13px; font-weight: 500; color: var(--fg); }
+
+    /* ── Work ── */
+    .work-head { margin-bottom: 52px; }
+    .work-list { display: flex; flex-direction: column; }
+    .work-item {
+      padding: 32px 0; border-top: 1px solid var(--border);
+      position: relative; transition: padding-left .35s cubic-bezier(.16,1,.3,1);
+    }
+    .work-item:last-child { border-bottom: 1px solid var(--border); }
+    .work-item::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 2px; background: linear-gradient(to bottom, var(--cyan), var(--pink));
+      transform: scaleY(0); transform-origin: top;
+      transition: transform .4s cubic-bezier(.16,1,.3,1);
+    }
+    .work-item:hover { padding-left: 18px; }
+    .work-item:hover::before { transform: scaleY(1); }
+    .w-meta { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; gap: 16px; }
+    .w-title { font-weight: 600; font-size: 15px; color: var(--fg); letter-spacing: -.2px; }
+    .w-period { font-family: 'VT323', monospace; font-size: 15px; color: var(--muted); letter-spacing: .8px; flex-shrink: 0; }
+    .w-org { font-size: 12px; color: var(--cyan); font-weight: 500; letter-spacing: .3px; margin-bottom: 10px; text-shadow: 0 0 8px rgba(0,204,255,.3); }
+    .w-desc { font-size: 15px; color: var(--muted); line-height: 1.72; }
+    .w-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+    .w-tag {
+      font-family: 'VT323', monospace; font-size: 13px;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 10px; border: 1px solid var(--border);
+      color: var(--muted); transition: border-color .2s, color .2s;
+    }
+    .work-item:hover .w-tag { border-color: rgba(0,204,255,.25); color: rgba(220,232,255,.6); }
+    .work-item.incoming { border-top: 1px solid rgba(170,255,0,.2); }
+    .work-item.incoming::before { background: linear-gradient(to bottom, var(--lime), var(--cyan)); }
+    .incoming-badge {
+      display: inline-block;
+      font-family: 'VT323', monospace; font-size: 13px;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      padding: 3px 10px; margin-bottom: 8px;
+      background: rgba(170,255,0,.1); color: var(--lime);
+      border: 1px solid rgba(170,255,0,.25);
+      text-shadow: 0 0 8px rgba(170,255,0,.4);
+    }
+
+    /* ── Study Guides ── */
+    .books-intro { font-size: 16px; color: var(--muted); max-width: 560px; line-height: 1.75; margin-bottom: 48px; font-weight: 400; }
+    .books-intro strong { color: var(--fg); font-weight: 500; }
+    .books-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .book-card {
+      border: 1px solid var(--border); padding: 32px 28px;
+      position: relative; overflow: hidden;
+      transition: border-color .3s, box-shadow .3s;
+      text-decoration: none; color: inherit; display: block;
+      will-change: transform;
+    }
+    .book-card:hover { border-color: rgba(0,204,255,.35); box-shadow: 0 20px 60px rgba(0,204,255,.1); }
+    .book-card::before {
+      content: ''; position: absolute;
+      top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--cyan), var(--pink));
+      transform: scaleX(0); transform-origin: left;
+      transition: transform .4s cubic-bezier(.16,1,.3,1);
+    }
+    .book-card:hover::before { transform: scaleX(1); }
+    .book-num {
+      font-family: 'VT323', monospace; font-size: 36px;
+      color: rgba(0,204,255,.15); line-height: 1; margin-bottom: 16px;
+    }
+    .book-title {
+      font-family: 'Syne', sans-serif; font-weight: 700;
+      font-size: 18px; letter-spacing: -.5px;
+      color: var(--fg); margin-bottom: 10px; line-height: 1.25;
+    }
+    .book-desc { font-size: 14px; color: var(--muted); line-height: 1.65; margin-bottom: 20px; }
+    .book-link {
+      font-family: 'VT323', monospace; font-size: 15px;
+      color: var(--cyan); letter-spacing: 1px; text-transform: uppercase;
+      text-shadow: 0 0 8px rgba(0,204,255,.4);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .book-link::after { content: ' >>'; }
+
+    /* ── Interests ── */
+    .int-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+    .int-tag {
+      padding: 9px 18px;
+      font-size: 13px; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 0;
+      transition: border-color .25s, color .25s, transform .25s cubic-bezier(.16,1,.3,1), box-shadow .25s;
+    }
+    .int-tag:hover {
+      border-color: rgba(0,204,255,.35); color: var(--fg);
+      transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,204,255,.1);
+    }
+    .int-tag.hi { border-color: rgba(0,204,255,.25); color: var(--cyan); background: rgba(0,204,255,.04); }
+    .int-tag.hi:hover { background: rgba(0,204,255,.08); box-shadow: 0 4px 20px rgba(0,204,255,.15); }
+
+    /* ── Contact ── */
+    #contact { padding-bottom: 140px; }
+    .contact-big {
+      font-family: 'Syne', sans-serif; font-weight: 800;
+      font-size: clamp(52px, 9vw, 124px);
+      letter-spacing: -4px; line-height: .9; margin-bottom: 64px;
+    }
+    .contact-big .hi { color: var(--cyan); text-shadow: 0 0 40px rgba(0,204,255,.3); }
+    .contact-links { display: flex; flex-direction: column; max-width: 640px; }
+    .contact-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0; border-top: 1px solid var(--border);
+      text-decoration: none; color: inherit;
+      transition: padding-left .3s cubic-bezier(.16,1,.3,1);
+      position: relative;
+    }
+    .contact-row:last-child { border-bottom: 1px solid var(--border); }
+    .contact-row::after {
+      content: ''; position: absolute; bottom: -1px; left: 0;
+      height: 1px; width: 0; background: var(--cyan);
+      transition: width .4s cubic-bezier(.16,1,.3,1);
+    }
+    .contact-row:hover { padding-left: 12px; }
+    .contact-row:hover::after { width: 100%; }
+    .c-label { font-family: 'VT323', monospace; font-size: 13px; color: var(--cyan); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
+    .c-val { font-size: 16px; font-weight: 500; color: var(--fg); }
+    .c-arrow { font-size: 20px; color: var(--muted); transition: transform .25s cubic-bezier(.16,1,.3,1), color .2s; }
+    .contact-row:hover .c-arrow { transform: translate(4px,-4px); color: var(--cyan); }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border); padding: 22px 52px;
+      display: flex; justify-content: space-between; align-items: center;
+      position: relative; z-index: 1;
+    }
+    .f-txt { font-family: 'VT323', monospace; font-size: 14px; color: var(--muted); letter-spacing: 1px; }
+
+    /* ── Reveal ── */
+    .reveal-up {
+      opacity: 0; transform: translateY(40px) scale(0.97);
+      transition: opacity 1s cubic-bezier(.16,1,.3,1), transform 1s cubic-bezier(.16,1,.3,1);
+    }
+    .reveal-up.in { opacity: 1; transform: none; }
+    .stagger-wrap .si {
+      opacity: 0; transform: translateY(28px) scale(0.97);
+      transition: opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1);
+    }
+    .stagger-wrap.in .si:nth-child(1) { opacity:1;transform:none;transition-delay:.00s }
+    .stagger-wrap.in .si:nth-child(2) { opacity:1;transform:none;transition-delay:.08s }
+    .stagger-wrap.in .si:nth-child(3) { opacity:1;transform:none;transition-delay:.16s }
+    .stagger-wrap.in .si:nth-child(4) { opacity:1;transform:none;transition-delay:.24s }
+    .stagger-wrap.in .si:nth-child(5) { opacity:1;transform:none;transition-delay:.32s }
+    .stagger-wrap.in .si:nth-child(6) { opacity:1;transform:none;transition-delay:.40s }
+    .stagger-wrap.in .si:nth-child(7) { opacity:1;transform:none;transition-delay:.48s }
+    .stagger-wrap.in .si:nth-child(8) { opacity:1;transform:none;transition-delay:.56s }
+
+    /* ── Responsive ── */
+    @media (max-width: 860px) {
+      nav { padding: 18px 22px; }
+      nav.compact { padding: 12px 22px; }
+      .nav-links { display: none; }
+      #hero { padding: 0 22px 48px; }
+      .hero-bottom-row { flex-direction: column; align-items: flex-start; gap: 24px; }
+      .geo-ring-1 { width: 320px; height: 320px; top: calc(50% - 160px); right: -80px; }
+      .geo-ring-2 { display: none; }
+      .geo-sq { display: none; }
+      .page-section { padding: 72px 22px; }
+      .about-grid { grid-template-columns: 1fr; gap: 40px; }
+      .books-grid { grid-template-columns: 1fr; }
+      .contact-big { letter-spacing: -2px; }
+      footer { padding: 18px 22px; flex-direction: column; gap: 6px; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div id="scroll-progress" aria-hidden="true"></div>
+  <div id="cur-dot"></div>
+  <div id="cur-ring"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- NAV -->
+  <nav id="nav">
+    <a href="#hero" class="nav-logo">AB<span class="blink">_</span></a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#work">Work</a></li>
+      <li><a href="#books">Writing</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="geo geo-ring-1" aria-hidden="true"></div>
+    <div class="geo geo-ring-2" aria-hidden="true"></div>
+    <div class="geo geo-sq" aria-hidden="true"></div>
+
+    <div style="position:relative;z-index:1;">
+      <div class="hero-eyebrow">
+        Melbourne, AU <span>*</span> Finance + Product + Tech
+      </div>
+      <div class="glitch-wrap">
+        <div class="glitch-name" data-text="Arjun">Arjun</div><br />
+        <div class="glitch-name" data-text="Baheti">Baheti</div>
+      </div>
+      <div class="hero-bottom-row">
+        <div class="scroll-sig">
+          <div class="scroll-line"></div>
+          Scroll to explore
+        </div>
+        <div class="hero-ctas">
+          <a href="mailto:arjunbaheti001@gmail.com" class="btn btn-cyan" data-mag>Say hello</a>
+          <a href="#work" class="btn btn-outline" data-mag>My work</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-strip">
+    <div class="marquee-track">
+      <div class="m-item">AWS Program Management <span class="m-sep">*</span></div>
+      <div class="m-item">StartupLink President <span class="m-sep">*</span></div>
+      <div class="m-item">Published Author <span class="m-sep">*</span></div>
+      <div class="m-item">Dept of Education VIC <span class="m-sep">*</span></div>
+      <div class="m-item">Finance + Product + Tech <span class="m-sep">*</span></div>
+      <div class="m-item">BCom @ UniMelb <span class="m-sep">*</span></div>
+      <div class="m-item">Melbourne, AU <span class="m-sep">*</span></div>
+      <div class="m-item">AWS Program Management <span class="m-sep">*</span></div>
+      <div class="m-item">StartupLink President <span class="m-sep">*</span></div>
+      <div class="m-item">Published Author <span class="m-sep">*</span></div>
+      <div class="m-item">Dept of Education VIC <span class="m-sep">*</span></div>
+      <div class="m-item">Finance + Product + Tech <span class="m-sep">*</span></div>
+      <div class="m-item">BCom @ UniMelb <span class="m-sep">*</span></div>
+      <div class="m-item">Melbourne, AU <span class="m-sep">*</span></div>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <section id="about" class="page-section">
+    <div class="sec-label">01 <span class="line"></span> About</div>
+    <div class="about-grid">
+      <div class="reveal-up">
+        <h2 class="sec-h">Curious<br />by <span class="hi">nature.</span></h2>
+        <div class="fact-grid">
+          <div class="fact-cell">
+            <div class="fc-label">Degree</div>
+            <div class="fc-val">BCom, Acc. + Finance</div>
+          </div>
+          <div class="fact-cell">
+            <div class="fc-label">Based</div>
+            <div class="fc-val">Melbourne, AU</div>
+          </div>
+          <div class="fact-cell">
+            <div class="fc-label">University</div>
+            <div class="fc-val">UniMelb</div>
+          </div>
+          <div class="fact-cell">
+            <div class="fc-label">Graduating</div>
+            <div class="fc-val">November 2027</div>
+          </div>
+        </div>
+      </div>
+      <div class="about-r reveal-up" style="transition-delay:.12s">
+        <p>I'm Arjun - studying Accounting and Finance at <strong>the University of Melbourne</strong>. Finance people who actually get technology, and tech people who understand finance, are rare. That gap is where I want to work.</p>
+        <p>I've spent time at <strong>Amazon Web Services</strong> building internal automation tooling, worked on workforce policy at the <strong>Department of Education</strong>, and ran StartupLink - a student startup community with 700+ members and a team of 48.</p>
+        <p>Outside of that, I've written two study guides published through <strong>ATAR Notes</strong>, stocked across 50+ bookstores in Victoria. Getting hard material into a format students can actually use takes real work - it's something I find worth doing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORK -->
+  <section id="work" class="page-section">
+    <div class="sec-label">02 <span class="line"></span> Experience</div>
+    <div class="work-head reveal-up">
+      <h2 class="sec-h">Where I've <span class="hi">been.</span></h2>
+    </div>
+    <div class="work-list stagger-wrap">
+
+      <div class="work-item incoming si">
+        <div class="incoming-badge">Incoming</div>
+        <div class="w-meta">
+          <div class="w-title">Product Management Intern</div>
+          <div class="w-period">Nov 2026</div>
+        </div>
+        <div class="w-org">Atlassian</div>
+        <p class="w-desc">Starting as a product management intern. More to come.</p>
+        <div class="w-tags">
+          <span class="w-tag">Product</span><span class="w-tag">Operations</span>
+        </div>
+      </div>
+
+      <div class="work-item si">
+        <div class="w-meta">
+          <div class="w-title">Program Management Intern</div>
+          <div class="w-period">Dec 2025 - Feb 2026</div>
+        </div>
+        <div class="w-org">Amazon Web Services (AWS)</div>
+        <p class="w-desc">Built automation tooling for internal operational workflows, cutting manual processing time by around 60%. Worked through APAC procurement and sourcing tickets, kept SLA adherence in check, and put together operational findings for executive presentations.</p>
+        <div class="w-tags">
+          <span class="w-tag">AI Tooling</span><span class="w-tag">Automation</span><span class="w-tag">Program Mgmt</span><span class="w-tag">APAC</span>
+        </div>
+      </div>
+
+      <div class="work-item si">
+        <div class="w-meta">
+          <div class="w-title">President</div>
+          <div class="w-period">Sep 2024 - May 2026</div>
+        </div>
+        <div class="w-org">StartUp Link University of Melbourne</div>
+        <p class="w-desc">Led one of Australia's largest student startup communities - team of 48, 700+ members. Ran events drawing 100+ people alongside VCs and accelerators, and worked with health-tech and consumer startups on live projects.</p>
+        <div class="w-tags">
+          <span class="w-tag">Leadership</span><span class="w-tag">Community</span><span class="w-tag">Startups</span>
+        </div>
+      </div>
+
+      <div class="work-item si">
+        <div class="w-meta">
+          <div class="w-title">Winter Intern - Policy, Strategy and Projects</div>
+          <div class="w-period">Jun - Sep 2025</div>
+        </div>
+        <div class="w-org">Department of Education, Victoria</div>
+        <p class="w-desc">Worked on teaching workforce data analysis and put together reports and briefings for senior stakeholders and board members. The work fed into staffing and resourcing decisions across the department.</p>
+        <div class="w-tags">
+          <span class="w-tag">Policy</span><span class="w-tag">Strategy</span><span class="w-tag">Government</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- STUDY GUIDES -->
+  <section id="books" class="page-section">
+    <div class="sec-label">03 <span class="line"></span> Study Guides + Writing</div>
+    <p class="books-intro reveal-up">
+      Two published study guides through <strong>ATAR Notes</strong>, available in 50+ bookstores across Victoria. Getting hard material into something students can actually use takes real work - and I find it worth doing.
+    </p>
+    <div class="books-grid stagger-wrap">
+      <a href="https://shop.atarnotes.com/products/atar-notes-guide-to-the-vic-selective-schools-test-year-9-entry-2025-2027" target="_blank" rel="noopener" class="book-card si">
+        <div class="book-num">01</div>
+        <div class="book-title">Guide to the Vic Selective Schools Test</div>
+        <p class="book-desc">A complete guide for Year 9 entry into Victoria's selective high schools. Covers all exam components with a focus on building real understanding, not just test familiarity.</p>
+        <div class="book-link">Buy on ATAR Notes</div>
+      </a>
+      <a href="https://shop.atarnotes.com/products/atar-notes-vce-general-maths-3-4-summary-sheets-2025-2027" target="_blank" rel="noopener" class="book-card si">
+        <div class="book-num">02</div>
+        <div class="book-title">VCE General Maths 3+4 Summary Sheets</div>
+        <p class="book-desc">Summary sheets for VCE General Mathematics Units 3 and 4. Distils the full course into clear, exam-ready reference material built around how students actually work through it.</p>
+        <div class="book-link">Buy on ATAR Notes</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- INTERESTS -->
+  <section id="interests" class="page-section">
+    <div class="sec-label">04 <span class="line"></span> Interests</div>
+    <div class="reveal-up" style="margin-bottom:40px;">
+      <h2 class="sec-h">The fuller<br /><span class="hi">picture.</span></h2>
+    </div>
+    <div class="int-tags stagger-wrap">
+      <span class="int-tag hi si">AI / LLMs</span>
+      <span class="int-tag hi si">Product Management</span>
+      <span class="int-tag hi si">Startups</span>
+      <span class="int-tag si">Venture Capital</span>
+      <span class="int-tag si">Fintech</span>
+      <span class="int-tag si">Consumer Apps</span>
+      <span class="int-tag si">UX & Design</span>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="page-section">
+    <div class="sec-label">05 <span class="line"></span> Contact</div>
+    <h2 class="contact-big reveal-up">
+      Let's<br /><span class="hi">talk.</span>
+    </h2>
+    <div class="contact-links stagger-wrap">
+      <a href="mailto:arjunbaheti001@gmail.com" class="contact-row si">
+        <div>
+          <div class="c-label">Email</div>
+          <div class="c-val">arjunbaheti001@gmail.com</div>
+        </div>
+        <span class="c-arrow">-></span>
+      </a>
+      <a href="https://www.linkedin.com/in/arjun-baheti/" target="_blank" rel="noopener" class="contact-row si">
+        <div>
+          <div class="c-label">LinkedIn</div>
+          <div class="c-val">linkedin.com/in/arjun-baheti</div>
+        </div>
+        <span class="c-arrow">-></span>
+      </a>
+      <a href="https://www.instagram.com/arjun.baheti/" target="_blank" rel="noopener" class="contact-row si">
+        <div>
+          <div class="c-label">Instagram</div>
+          <div class="c-val">@arjun.baheti</div>
+        </div>
+        <span class="c-arrow">-></span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <span class="f-txt">[ ARJUN BAHETI * 2026 ]</span>
+    <span class="f-txt">MELBOURNE, AU</span>
+  </footer>
+
+  <script>
+  (() => {
+    // Spring cursor
+    const dot  = document.getElementById('cur-dot');
+    const ring = document.getElementById('cur-ring');
+    let mx = 0, my = 0, rx = 0, ry = 0, vx = 0, vy = 0;
+
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+    });
+    document.addEventListener('mouseleave', () => { dot.style.opacity='0'; ring.style.opacity='0'; });
+    document.addEventListener('mouseenter', () => { dot.style.opacity=''; ring.style.opacity=''; });
+    document.addEventListener('mousedown', () => document.body.classList.add('c-click'));
+    document.addEventListener('mouseup',   () => document.body.classList.remove('c-click'));
+    document.querySelectorAll('a, button, .int-tag, .work-item, .book-card').forEach(el => {
+      el.addEventListener('mouseenter', () => document.body.classList.add('c-hover'));
+      el.addEventListener('mouseleave', () => document.body.classList.remove('c-hover'));
+    });
+
+    (function springLoop() {
+      const stiffness = 0.11, damping = 0.78;
+      vx = (vx + (mx - rx) * stiffness) * damping;
+      vy = (vy + (my - ry) * stiffness) * damping;
+      rx += vx; ry += vy;
+      ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+      requestAnimationFrame(springLoop);
+    })();
+
+    // Geometric shapes - base spin + scroll velocity boost
+    const geos = [...document.querySelectorAll('.geo')];
+    const angles = [0, 0, 0];
+    const baseSpeeds = [0.18, -0.30, 0.52];
+    let lastScrollY = window.scrollY;
+    let scrollVel = 0;
+
+    (function geoLoop() {
+      scrollVel += (window.scrollY - lastScrollY) * 0.06;
+      scrollVel *= 0.90;
+      lastScrollY = window.scrollY;
+      geos.forEach((g, i) => {
+        angles[i] += baseSpeeds[i] + scrollVel * (i % 2 === 0 ? 0.5 : -0.5);
+        g.style.transform = 'rotate(' + angles[i] + 'deg)';
+      });
+      requestAnimationFrame(geoLoop);
+    })();
+
+    // Scroll progress bar
+    const prog = document.getElementById('scroll-progress');
+
+    // Nav compact
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => {
+      nav.classList.toggle('compact', window.scrollY > 60);
+      const p = window.scrollY / Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      prog.style.width = (p * 100) + '%';
+    }, { passive: true });
+
+    // Scroll reveal
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+    }, { threshold: 0.07 });
+    document.querySelectorAll('.reveal-up, .stagger-wrap').forEach(el => io.observe(el));
+
+    // Glitch on hero name
+    const names = document.querySelectorAll('.glitch-name');
+    function triggerGlitch() {
+      names.forEach(n => {
+        n.classList.add('glitching');
+        setTimeout(() => n.classList.remove('glitching'), 380);
+      });
+      setTimeout(triggerGlitch, 1200 + Math.random() * 1800);
+    }
+    setTimeout(triggerGlitch, 800);
+
+    // Magnetic buttons
+    document.querySelectorAll('[data-mag]').forEach(btn => {
+      btn.addEventListener('mousemove', e => {
+        const r = btn.getBoundingClientRect();
+        btn.style.transform = 'translate(' + ((e.clientX - r.left - r.width/2) * .25) + 'px,' + ((e.clientY - r.top - r.height/2) * .35) + 'px)';
+      });
+      btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+    });
+
+    // 3D perspective tilt on book cards
+    document.querySelectorAll('.book-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - 0.5;
+        const y = (e.clientY - r.top)  / r.height - 0.5;
+        card.style.transform = 'perspective(900px) rotateY(' + (x * 10) + 'deg) rotateX(' + (y * -10) + 'deg) translateY(-5px) scale(1.02)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transition = 'transform 0.5s cubic-bezier(.16,1,.3,1)';
+        card.style.transform = '';
+        card.addEventListener('transitionend', () => { card.style.transition = ''; }, { once: true });
+      });
+    });
+
+    // Orb parallax
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      document.querySelectorAll('.orb').forEach((o, i) => {
+        o.style.transform = 'translateY(' + (y * (i === 0 ? .04 : .06)) + 'px)';
+      });
+    }, { passive: true });
+  })();
+  </script>
+</body>
+</html>
