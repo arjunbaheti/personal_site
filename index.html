@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=VT323&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2306060f'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='15' font-weight='700' fill='%2300ccff' text-anchor='middle'%3EAB%3C/text%3E%3C/svg%3E">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -478,6 +479,21 @@
     .stagger-wrap.in .si:nth-child(7) { opacity:1;transform:none;transition-delay:.48s }
     .stagger-wrap.in .si:nth-child(8) { opacity:1;transform:none;transition-delay:.56s }
 
+    /* ── Coming Soon ── */
+    .coming-soon-box {
+      border: 1px dashed rgba(0,204,255,0.2);
+      padding: 52px 40px;
+      max-width: 560px;
+      background: rgba(0,204,255,0.02);
+    }
+    .cs-label {
+      font-family: 'VT323', monospace; font-size: 16px;
+      color: var(--cyan); letter-spacing: 2.5px; text-transform: uppercase;
+      margin-bottom: 12px;
+      text-shadow: 0 0 10px rgba(0,204,255,.4);
+    }
+    .cs-text { font-size: 15px; color: var(--muted); line-height: 1.7; }
+
     /* ── Responsive ── */
     @media (max-width: 860px) {
       nav { padding: 18px 22px; }
@@ -510,6 +526,7 @@
       <li><a href="#about">About</a></li>
       <li><a href="#work">Work</a></li>
       <li><a href="#books">Writing</a></li>
+      <li><a href="#thoughts">Blog</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
   </nav>
@@ -587,7 +604,7 @@
         </div>
       </div>
       <div class="about-r reveal-up" style="transition-delay:.12s">
-        <p>I'm Arjun - studying Accounting and Finance at <strong>the University of Melbourne</strong>. Finance people who actually get technology, and tech people who understand finance, are rare. That gap is where I want to work.</p>
+        <p>I'm Arjun - studying Accounting and Finance at <strong>the University of Melbourne</strong>. I'm fascinated by great products: what makes them feel effortless, why some experiences stick and others disappear, and the decisions behind the details most people never notice. Finance people who actually get technology, and tech people who understand finance, are rare. That gap is where I want to work.</p>
         <p>I've spent time at <strong>Amazon Web Services</strong> building internal automation tooling, worked on workforce policy at the <strong>Department of Education</strong>, and ran StartupLink - a student startup community with 700+ members and a team of 48.</p>
         <p>Outside of that, I've written two study guides published through <strong>ATAR Notes</strong>, stocked across 50+ bookstores in Victoria. Getting hard material into a format students can actually use takes real work - it's something I find worth doing.</p>
       </div>
@@ -605,7 +622,7 @@
       <div class="work-item incoming si">
         <div class="incoming-badge">Incoming</div>
         <div class="w-meta">
-          <div class="w-title">Product Management Intern</div>
+          <div class="w-title">Associate Product Management Intern</div>
           <div class="w-period">Nov 2026</div>
         </div>
         <div class="w-org">Atlassian</div>
@@ -693,12 +710,25 @@
     </div>
   </section>
 
+  <!-- THOUGHTS -->
+  <section id="thoughts" class="page-section">
+    <div class="sec-label">05 <span class="line"></span> Writing + Thoughts</div>
+    <div class="reveal-up" style="margin-bottom:40px;">
+      <h2 class="sec-h">Things I've<br /><span class="hi">written.</span></h2>
+    </div>
+    <div class="coming-soon-box reveal-up" style="transition-delay:.1s">
+      <div class="cs-label">// Coming soon</div>
+      <p class="cs-text">Essays, observations, and things I think are worth writing down. Check back.</p>
+    </div>
+  </section>
+
   <!-- CONTACT -->
   <section id="contact" class="page-section">
-    <div class="sec-label">05 <span class="line"></span> Contact</div>
+    <div class="sec-label">06 <span class="line"></span> Contact</div>
     <h2 class="contact-big reveal-up">
       Let's<br /><span class="hi">talk.</span>
     </h2>
+    <p class="reveal-up" style="font-size:16px;color:var(--muted);max-width:520px;line-height:1.75;margin-bottom:48px;transition-delay:.1s">Always keen to connect, whether it's about product, startups, tech, or just a good chat. Feel free to reach out.</p>
     <div class="contact-links stagger-wrap">
       <a href="mailto:arjunbaheti001@gmail.com" class="contact-row si">
         <div>
